@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cite-steam-mates-v1';
+const CACHE_NAME = 'cite-steam-mates-v2';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -42,4 +42,5 @@ self.addEventListener('fetch', (event) => {
                 return response || fetch(event.request);
             })
     );
+
 });
