@@ -1,0 +1,17 @@
+{
+    "name": "IA-FP Matemáticas CITE-STEAM",
+    "short_name": "IA-FP Mates",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#f0f2f5",
+    "theme_color": "#2a2e74",
+    "description": "App de entrenamiento en proporcionalidad para el proyecto CITE-STEAM IA y Robótica Inclusiva.",
+    "icons": [
+        {
+            "src": "logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
