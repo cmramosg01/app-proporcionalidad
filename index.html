@@ -15,11 +15,10 @@
 
     <style>
         :root {
-            /* COLORES EXTRAÍDOS DEL LOGO */
-            --primary: #2a2e74;    /* Azul oscuro corporativo */
-            --secondary: #474ba8;  /* Azul medio para hovers */
-            --accent: #1de9b6;     /* Turquesa/Menta del gatito y texto */
-            --correct: #1de9b6;    
+            --primary: #2a2e74;
+            --secondary: #474ba8;
+            --accent: #1de9b6;
+            --correct: #1de9b6;
             --wrong: #e21b3c;
             --bg: #f0f2f5;
             --text: #333;
@@ -212,5 +211,166 @@
     let isAnswered = false;
 
     function startGame() {
-        difficulty = parseInt(document.getElementById('difficulty').value);
-        document.getElementById('start-screen').
+        // Obtenemos el nivel
+        let diffSelect = document.getElementById('difficulty');
+        difficulty = parseInt(diffSelect.options[diffSelect.selectedIndex].value);
+        
+        // Cambiamos pantalla
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        
+        // Configuramos badge
+        let badge = document.getElementById('levelBadge');
+        if (difficulty === 1) {
+            badge.innerText = "MODO APRENDIZ";
+            badge.style.backgroundColor = "var(--accent)";
+            badge.style.color = "var(--primary)";
+        } else {
+            badge.innerText = "MODO EXPERTO";
+            badge.style.backgroundColor = "var(--secondary)";
+            badge.style.color = "white";
+        }
+        
+        score = 0; 
+        currentQuestion = 0; 
+        updateStats(); 
+        generateQuestion();
+    }
+
+    function generateQuestion() {
+        isAnswered = false;
+        document.getElementById('feedbackBox').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'none';
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+
+        const type = Math.floor(Math.random() * 5) + 1; 
+        let qText = "", answer = 0, explanation = "";
+
+        if (type === 1) { // COMPRA
+            let unitPrice = getRandomInt(2, difficulty === 1 ? 8 : 25);
+            let q1 = getRandomInt(2, 10);
+            let q2 = getRandomInt(11, 25);
+            let cost1 = unitPrice * q1;
+            answer = unitPrice * q2;
+            qText = `Si comprar <b>${q1} unidades</b> de material robótico cuesta <b>${cost1}€</b>... <br>¿Cuánto costarán <b>${q2} unidades</b>?`;
+            explanation = `Directa. Precio unitario: ${cost1}/${q1} = ${unitPrice}€. Solución: ${q2} x ${unitPrice} = ${answer}€.`;
+        } 
+        else if (type === 2) { // DISTANCIA
+            let speed = getRandomInt(10, difficulty === 1 ? 40 : 100); 
+            let time1 = getRandomInt(3, 10);
+            let dist1 = speed * time1;
+            let time2 = getRandomInt(12, 20);
+            answer = speed * time2;
+            qText = `Nuestro robot recorre <b>${dist1} cm</b> en <b>${time1} segundos</b>. <br>A esa velocidad, ¿cuántos cm recorrerá en <b>${time2} segundos</b>?`;
+            explanation = `Directa. Velocidad: ${dist1}/${time1} = ${speed} cm/s. Solución: ${speed} x ${time2} = ${answer} cm.`;
+        }
+        else if (type === 3) { // OBREROS
+            let k = getRandomMultiple([60, 120, 180, 240, 360]); 
+            let workers1 = getDivisor(k);
+            let time1 = k / workers1;
+            let workers2 = getDivisor(k);
+            while(workers2 === workers1 || workers2 < 2) workers2 = getDivisor(k);
+            answer = k / workers2;
+            qText = `Si un equipo de <b>${workers1} estudiantes</b> tarda <b>${time1} minutos</b> en montar un circuito...<br>¿Cuánto tardarán <b>${workers2} estudiantes</b>?`;
+            explanation = `Inversa. Trabajo total: ${workers1} x ${time1} = ${k}. Solución: ${k} / ${workers2} = ${answer} minutos.`;
+        }
+        else if (type === 4) { // VELOCIDAD
+            let k = getRandomMultiple([200, 400, 600, 800, 1000]);
+            let speed1 = getDivisor(k); if(speed1 < 10) speed1=20;
+            let time1 = k / speed1;
+            let speed2 = getDivisor(k); while(speed2 === speed1 || speed2 < 10) speed2 = getDivisor(k);
+            answer = k / speed2;
+            qText = `El robot tarda <b>${time1} segundos</b> yendo al <b>${speed1}%</b> de potencia.<br>¿Cuánto tardará si va al <b>${speed2}%</b> de potencia?`;
+            explanation = `Inversa. Constante: ${speed1} x ${time1} = ${k}. Solución: ${k} / ${speed2} = ${answer} segundos.`;
+        }
+        else if (type === 5) { // PORCENTAJES
+            let base = getRandomInt(2, 20) * 10;
+            let percent = getRandomInt(1, difficulty === 1 ? 4 : 8) * 10; 
+            let isDiscount = Math.random() > 0.5;
+            let amount = (base * percent) / 100;
+            if (isDiscount) {
+                answer = base - amount;
+                qText = `Un kit de sensores cuesta <b>${base}€</b> pero tiene un descuento del <b>${percent}%</b>.<br>¿Precio final?`;
+                explanation = `${percent}% de ${base} son ${amount}€. Restamos: ${base} - ${amount} = ${answer}€.`;
+            } else {
+                answer = base + amount;
+                qText = `El presupuesto es de <b>${base}€</b> más un <b>${percent}%</b> de gastos de envío.<br>¿Coste total?`;
+                explanation = `${percent}% de ${base} son ${amount}€. Sumamos: ${base} + ${amount} = ${answer}€.`;
+            }
+        }
+        document.getElementById('questionText').innerHTML = qText;
+        correctAnswer = answer;
+        generateOptions(answer);
+    }
+
+    function generateOptions(correct) {
+        let options = [correct];
+        while (options.length < 4) {
+            let fake;
+            let variation = Math.floor(Math.random() * (difficulty === 1 ? 5 : 15)) + 1;
+            if (Math.random() > 0.5) fake = correct + variation; else fake = correct - variation;
+            if (fake <= 0) fake = correct + variation + 2;
+            if (!options.includes(fake)) options.push(fake);
+        }
+        options.sort(() => Math.random() - 0.5);
+        const container = document.getElementById('optionsContainer');
+        options.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt % 1 === 0 ? opt : opt.toFixed(1);
+            btn.onclick = () => checkAnswer(opt, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selected, btnElement) {
+        if (isAnswered) return;
+        isAnswered = true;
+        const feedback = document.getElementById('feedbackBox');
+        feedback.style.display = 'block';
+        if (Math.abs(selected - correctAnswer) < 0.1) {
+            score += difficulty === 1 ? 100 : 200;
+            btnElement.classList.add('correct-anim');
+            feedback.innerHTML = "✅ ¡CORRECTO! Sistema validado.";
+            feedback.style.color = "var(--primary)"; feedback.style.background = "var(--accent)";
+            document.getElementById('scoreDisplay').innerText = `Puntos: ${score}`;
+        } else {
+            btnElement.classList.add('wrong-anim');
+            feedback.innerHTML = "❌ ERROR DE CÁLCULO. <br>" + explanation;
+            feedback.style.color = "#721c24"; feedback.style.background = "#f8d7da";
+        }
+        document.getElementById('nextBtn').style.display = 'inline-block';
+        let progress = ((currentQuestion + 1) / totalQuestions) * 100;
+        document.getElementById('progressBar').style.width = `${progress}%`;
+    }
+
+    function nextQuestion() {
+        currentQuestion++;
+        if (currentQuestion < totalQuestions) { updateStats(); generateQuestion(); } else { endGame(); }
+    }
+    function updateStats() { document.getElementById('qCountDisplay').innerText = `Pregunta ${currentQuestion + 1}/${totalQuestions}`; }
+    function endGame() {
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('end-screen').classList.add('active');
+        document.getElementById('finalScore').innerText = score;
+        let msg = ""; let maxScore = difficulty === 1 ? 1000 : 2000;
+        if(score >= maxScore * 0.8) msg = "¡EXCELENTE! Nivel de competencia CITE-STEAM máximo alcanzado. 🏆";
+        else if(score >= maxScore * 0.5) msg = "¡Buen trabajo! Has superado el entrenamiento básico. 👍";
+        else msg = "Necesitas más entrenamiento. ¡Vuelve a intentarlo! 💪";
+        document.getElementById('finalMessage').innerText = msg;
+    }
+
+    function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function getRandomMultiple(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function getDivisor(num) {
+        let divisors = [];
+        for (let i = 2; i <= Math.sqrt(num); i++) {
+            if (num % i === 0) { divisors.push(i); if (i*i !== num) divisors.push(num/i); }
+        }
+        if(divisors.length === 0) return 2;
+        return divisors[Math.floor(Math.random() * divisors.length)];
+    }
+</script>
+</body>
+</html>
